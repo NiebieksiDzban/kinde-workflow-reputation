@@ -38,6 +38,7 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
         },
       });
       console.log(res);
+      console.log(event.context.workflow);
     }
   }
 }
