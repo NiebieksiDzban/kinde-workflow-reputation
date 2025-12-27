@@ -2,6 +2,7 @@ import {
   onPostAuthenticationEvent,
   WorkflowSettings,
   WorkflowTrigger,
+  createKindeAPI,
 } from "@kinde/infrastructure";
 
 export const workflowSettings: WorkflowSettings = {
@@ -9,65 +10,47 @@ export const workflowSettings: WorkflowSettings = {
   name: "Set preferred_username from Twitch",
   trigger: WorkflowTrigger.PostAuthentication,
   bindings: {
+    "kinde.mfa": {},
     "kinde.fetch": {},
+    "kinde.env": {},
     "kinde.auth": {},
+    "url": {},
     console: {},
-    "kinde.mfa": {}
   },
 };
 
-type Identity = {
-  name: string;
-  identity_data?: { username?: string };
-};
-
-type IdentitiesResponse = { identities?: Identity[] };
-
 export default async function Workflow(event: onPostAuthenticationEvent) {
   const isNewKindeUser = event.context.auth.isNewUserRecordCreated;
-  if (!isNewKindeUser) return;
 
-  const fetch = event.context.fetch;
-  const userId = event.context.user.id;
+  if (isNewKindeUser) {
+    const kindeApi = await createKindeAPI(event);
+    const userId = event.context.user.id;
 
-  // Fetch user identities
-  let identitiesResponse: IdentitiesResponse | undefined;
-  try {
-    identitiesResponse = await fetch({
-      method: "GET",
+    // Get user identities to find Twitch username
+    const { data: identitiesResponse } = await kindeApi.get({
       endpoint: `users/${userId}/identities`,
     });
-  } catch (err) {
-    console.log("Failed to fetch identities:", err);
-    return;
-  }
 
-  if (!identitiesResponse?.identities?.length) {
-    console.log("No identities found:", identitiesResponse);
-    return;
-  }
+    const twitchIdentity = identitiesResponse?.identities?.find(
+      (i: any) => i.name === "twitch"
+    );
 
-  const twitchIdentity = identitiesResponse.identities.find(
-      (id) => id.name === "twitch"
-  );
+    if (twitchIdentity) {
+      const twitchUsername = twitchIdentity.identity_data?.username;
 
-  if (!twitchIdentity?.identity_data?.username) {
-    console.log("No Twitch username found:", twitchIdentity);
-    return;
-  }
-
-  const twitchUsername = twitchIdentity.identity_data.username;
-
-  console.log(`Updating preferred_username to ${twitchUsername} for user ${userId}`);
-
-  try {
-    await fetch({
-      method: "PATCH",
-      endpoint: `users/${userId}`,
-      body: { preferred_username: twitchUsername },
-    });
-    console.log("preferred_username updated successfully");
-  } catch (err) {
-    console.log("Failed to update preferred_username:", err);
+      if (twitchUsername) {
+        console.log(`Updating preferred_username to ${twitchUsername} for user ${userId}`);
+        await kindeApi.patch({
+          endpoint: `users/${userId}`,
+          params: {
+            preferred_username: twitchUsername,
+          },
+        });
+      } else {
+        console.log("Twitch username not found in identity data");
+      }
+    } else {
+      console.log("No Twitch identity found for the user");
+    }
   }
 }
