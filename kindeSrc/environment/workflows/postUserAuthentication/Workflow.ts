@@ -30,13 +30,14 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
     console.log(`twitchUsername: ${twitchUsername}`);
 
     if (twitchUsername) {
-      await kindeApi.patch({
+      const res = await kindeApi.patch({
         endpoint: `users/${userId}/identities`,
         params: {
           value: twitchUsername,
           type: 'username',
         },
       });
+      console.log(res);
     }
   }
 }
