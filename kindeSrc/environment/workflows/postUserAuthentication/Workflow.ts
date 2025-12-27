@@ -26,13 +26,14 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
   const fetch = event.context.fetch;
   const userId = event.context.user.id;
 
-  // 1) Fetch linked identities
-  const identitiesRes = await fetch({
+  // 1️⃣ Fetch user identities
+  const identitiesResponse: any = await fetch({
     method: "GET",
     endpoint: `users/${userId}/identities`,
   });
 
-  const identities = identitiesRes?.data?.identities || [];
+  const identities = identitiesResponse?.identities || [];
+
   const twitchIdentity = identities.find(
       (id: any) => id.name === "twitch"
   );
