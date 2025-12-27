@@ -14,6 +14,7 @@ export const workflowSettings: WorkflowSettings = {
     "kinde.env": {},
     "kinde.auth": {},
     console: {},
+    "kinde.mfa": {}
   },
 };
 
