@@ -27,11 +27,13 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
     const userId = event.context.user.id;
 
     // Get user identities to find Twitch username
-    const { data: identitiesResponse } = await kindeApi.get({
+    const { data } = await kindeApi.get({
       endpoint: `users/${userId}/identities`,
     });
 
-    const twitchIdentity = identitiesResponse?.identities?.find(
+    console.log(data);
+
+    const twitchIdentity = data?.identities?.find(
       (i: any) => i.name === "twitch"
     );
 
