@@ -23,7 +23,10 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
   const isNewKindeUser = event.context.auth.isNewUserRecordCreated;
 
   if (isNewKindeUser) {
-    const kindeApi = await createKindeAPI(event);
+    const kindeApi = await createKindeAPI(event, {
+      clientIdKey: "ebfa8fba4c2345b58d348a6b305c0cc4",
+      clientSecretKey: "cqmnlU9TJqVp7ZXWFahiheEUTOfM1JRoD9d1WU4dKdepGUxTU6Wu"
+    });
     const userId = event.context.user.id;
 
     // Get user identities to find Twitch username
