@@ -32,6 +32,7 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
     });
 
     console.log(data);
+    console.log(event.context.user);
 
     const twitchIdentity = data?.identities?.find(
       (i: any) => i.name === "twitch"
