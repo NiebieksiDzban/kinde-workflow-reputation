@@ -14,6 +14,7 @@ export const workflowSettings: WorkflowSettings = {
     "kinde.m2mToken": {},
     "kinde.fetch": {},
     "kinde.env": {},
+    console: {},
     url: {},
   },
 };
@@ -26,6 +27,7 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
     const kindeApi = await createKindeAPI(event);
 
     const twitchUsername = event.context.auth.provider.data.idToken.claims.preferred_username;
+    console.log(`twitchUsername: ${twitchUsername}`);
 
     if (twitchUsername) {
       await kindeApi.patch({
