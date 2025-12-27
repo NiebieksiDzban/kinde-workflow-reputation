@@ -2,42 +2,53 @@ import {
   onPostAuthenticationEvent,
   WorkflowSettings,
   WorkflowTrigger,
+  createKindeAPI,
 } from "@kinde/infrastructure";
 
-// setPreferredUsernameWorkflow.js
-
-export const workflowSettings = {
+export const workflowSettings: WorkflowSettings = {
   id: "setPreferredUsernameFromTwitch",
   name: "Set preferred_username from Twitch",
-  trigger: "user:tokens_generation",
+  trigger: WorkflowTrigger.PostAuthentication,
+  bindings: {
+    "kinde.fetch": {},
+    "kinde.env": {},
+    "kinde.auth": {},
+    console: {},
+  },
 };
 
-export default async function Workflow({ request, context, kinde }) {
-  const user = context.user;
-  const identities = user.identities || [];
+export default async function Workflow(event: onPostAuthenticationEvent) {
+  const isNewKindeUser = event.context.auth.isNewUserRecordCreated;
 
-  // Find Twitch identity (case may vary)
-  const twitchIdentity = identities.find(
-      (i) => i.type === "twitch"
-  );
+  if (isNewKindeUser) {
+    const kindeApi = await createKindeAPI(event);
+    const userId = event.context.user.id;
 
-  if (!twitchIdentity) {
-    return;
-  }
-
-  const twitchUsername =
-      twitchIdentity.details?.preferred_username ||
-      twitchIdentity.details?.login;
-
-  if (!twitchUsername) {
-    return;
-  }
-
-  // Only update if not already set
-  if (!user.preferred_username) {
-    await kinde.auth.updateUser({
-      id: user.id,
-      preferred_username: twitchUsername,
+    // Get user identities to find Twitch username
+    const { data: identitiesResponse } = await kindeApi.get({
+      endpoint: `users/${userId}/identities`,
     });
+
+    const twitchIdentity = identitiesResponse?.identities?.find(
+      (identity: any) => identity.name === "twitch"
+    );
+
+    if (twitchIdentity) {
+      const twitchUsername = twitchIdentity.identity_data?.username;
+
+      if (twitchUsername) {
+        console.log(`Updating preferred_username to ${twitchUsername} for user ${userId}`);
+        await kindeApi.patch({
+          endpoint: `users/${userId}`,
+          params: {
+            preferred_username: twitchUsername,
+          },
+        });
+      } else {
+        console.log("Twitch username not found in identity data");
+      }
+    } else {
+      console.log("No Twitch identity found for the user");
+    }
   }
 }
