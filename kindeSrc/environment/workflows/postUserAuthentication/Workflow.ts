@@ -26,9 +26,7 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
   if (isNewKindeUser) {
     const kindeApi = await createKindeAPI(event);
 
-    const twitchUsername = event.context.auth.provider.data.idToken.claims.preferred_username;
-    console.log(event.context.auth.provider)
-    console.log(`twitchUsername: ${twitchUsername}`);
+    const twitchUsername = event.context.auth.provider.data.idToken.claims.sub;
 
     if (twitchUsername) {
       const res = await kindeApi.post({
@@ -38,8 +36,6 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
           value: twitchUsername
         },
       });
-      console.log(res);
-      console.log(event.context.workflow);
     }
   }
 }
