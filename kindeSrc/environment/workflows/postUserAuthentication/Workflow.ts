@@ -27,6 +27,7 @@ export default async function Workflow(event: onPostAuthenticationEvent) {
     const kindeApi = await createKindeAPI(event);
 
     const twitchUsername = event.context.auth.provider.data.idToken.claims.preferred_username;
+    console.log(event.context.auth.provider)
     console.log(`twitchUsername: ${twitchUsername}`);
 
     if (twitchUsername) {
